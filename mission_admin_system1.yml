@@ -1,0 +1,58 @@
+---
+- name: Créer des utilisateurs et stocker les identifiants dans Vault (clé/valeur)
+  hosts: vault
+  become: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+    users:
+      - name: demo1
+        password: motdepasse123
+        comment: "Compte de test n°1"
+        environment: developpement
+
+      - name: toto
+        password: toto
+        comment: "Compte de production"
+        environment: production
+
+  tasks:
+
+    - name: Créer les utilisateurs
+      ansible.builtin.user:
+        name: "{{ item.name }}"
+        comment: "{{ item.comment }}"
+        password: "{{ item.password }}"
+        state: present
+      loop: "{{ users }}"
+      no_log: true
+
+    - name: Stocker les identifiants dans Vault (clé = nom utilisateur)
+      community.hashi_vault.vault_kv2_write:
+        url: "http://localhost:8200"
+        token: "{{ vault_token }}"
+        mount_point: secret
+        path: "{{ item.environment }}"
+        data:
+                "{{ { item.name: item.password | password_hash('sha512') } }}"
+      loop: "{{ users }}"
+      no_log: true
+
+    - name: Vérifier le mot de passe d'un utilisateur depuis Vault
+      community.hashi_vault.vault_kv2_get:
+        url: http://127.0.0.1:8200
+        token: "{{ vault_token }}"
+        mount_point: secret
+        path: "production"
+      register: vault_password_result
+
+    - name: ls avec mot de passe récupéré via lookup
+      vars:
+        environment_hv: production
+        username_hv: toto
+      ansible.builtin.shell: |
+        echo "{{ lookup('community.hashi_vault.hashi_vault',
+                   'secret=secret/data/' ~ environment_hv
+                   ~ ' field=' ~ username_hv
+                   ~ ' url=http://192.168.174.131:8200'
+                   ~ ' token=' ~ vault_token) }}" | sudo -S -u {{ username_hv }} ls /home/{{ username_hv }}
