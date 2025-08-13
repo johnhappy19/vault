@@ -1,0 +1,16 @@
+vars:
+- auth_from_vault: "{{ lookup('community.hashi_vault.hashi_vault','automatisation/data/autovm/', auth_method=vault_auth_method,role_id=approle,secret_id=secret_id, url=vault_url) }}"
+
+exemple de task :
+- name: Get 'Hard Disk 3' details
+  community.vmware.vmware_guest_disk_info:
+    hostname: "{{ auto_from_vault.hostname }}"
+    username: "{{ auto_from_vault.username }}"
+    password: "{{ auto_from_vault.passeword }}"
+    datacenter: "Toto"
+    validate_certs: no
+    name: "{{ item }}"
+  register: disk_info
+  with_items:
+    - vm1
+    - vm2
