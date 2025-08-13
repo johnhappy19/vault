@@ -14,3 +14,12 @@ exemple de task :
   with_items:
     - vm1
     - vm2
+
+exemple de task utilisant approle :
+    - name: Authentification auprès de Vault via AppRole
+      community.hashi_vault.vault_login:
+        url: "{{ vault_addr }}"
+        auth_method: approle
+        role_id: "{{ vault_role_id }}"
+        secret_id: "{{ vault_secret_id }}"
+      register: vault_token
