@@ -1,0 +1,47 @@
+---
+  - name: Créer les utilisateurs
+    ansible.builtin.user:
+      name: "{{ item.name }}"
+      comment: "{{ item.comment }}"
+      password: "{{ item.password }}"
+      state: present
+    loop: "{{ users }}"
+    no_log: true
+
+  - name: Stocker les identifiants dans Vault (clé = nom utilisateur)
+    community.hashi_vault.vault_kv2_write:
+      url: "{{ vault_url }}"
+      auth_method: approle
+      role_id: "{{ vault_role_id }}"
+      secret_id: "{{ vault_secret_id }}"
+      engine_mount_point: secret
+      path: "{{ item.environment }}"
+      data:
+              "{{ { item.name: (item.password | password_hash('sha512')) } }}"
+    loop: "{{ users }}"
+    no_log: true
+
+  - name: Vérifier le mot de passe d'un utilisateur depuis Vault
+    community.hashi_vault.vault_kv2_get:
+      url: "{{ vault_url }}"
+      auth_method: approle
+      role_id: "{{ vault_role_id }}"
+      secret_id: "{{ vault_secret_id }}"
+      engine_mount_point: secret
+      path: "production"
+    register: vault_password_result
+
+  - name: ls avec mot de passe récupéré via lookup
+    vars:
+      environment_hv: production
+      username_hv: toto
+      hv_pass: "{{ lookup('community.hashi_vault.hashi_vault',
+                     'secret=secret/data/' ~ environment_hv
+                     ~ ' field=' ~ username_hv
+                     ~ ' url=' ~ vault_url
+                     ~ ' auth_method=approle'
+                     ~ ' engine_mount_point=secret'
+                     ~ ' role_id=' ~ vault_role_id
+                     ~ ' secret_id=' ~ vault_secret_id) }}"
+    ansible.builtin.shell: |
+      echo "{{ hv_pass }}" | sudo -S -u {{ username_hv }} ls /home/{{ username_hv }}

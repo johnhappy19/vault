@@ -1,0 +1,15 @@
+ansible_python_interpreter: /usr/bin/python3.12
+vault_url: "http://192.168.147.131:8200"
+vault_role_id: "b936d073-f083-f9c5-ff16-877df17271d9"
+vault_secret_id: "1c0caf2b-9da1-c1e8-2eb6-1e6c6b1d746c"
+users:
+  - name: demo1
+    password: motdepasse123
+    comment: "Compte de test n°1"
+    environment: developpement
+
+  - name: toto
+    password: toto
+    comment: "Compte de production"
+    environment: production
+
