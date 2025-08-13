@@ -3,7 +3,7 @@
   hosts: vault
   become: true
   vars:
-    ansible_python_interpreter: /usr/bin/python3
+    ansible_python_interpreter: /usr/bin/python3.12
 
     users:
       - name: demo1
@@ -29,7 +29,7 @@
 
     - name: Stocker les identifiants dans Vault (clé = nom utilisateur)
       community.hashi_vault.vault_kv2_write:
-        url: "http://localhost:8200"
+        url: "http://192.168.147.131:8200"
         token: "{{ vault_token }}"
         mount_point: secret
         path: "{{ item.environment }}"
@@ -40,7 +40,7 @@
 
     - name: Vérifier le mot de passe d'un utilisateur depuis Vault
       community.hashi_vault.vault_kv2_get:
-        url: http://127.0.0.1:8200
+        url: "http://192.168.147.131:8200"
         token: "{{ vault_token }}"
         mount_point: secret
         path: "production"
@@ -54,5 +54,5 @@
         echo "{{ lookup('community.hashi_vault.hashi_vault',
                    'secret=secret/data/' ~ environment_hv
                    ~ ' field=' ~ username_hv
-                   ~ ' url=http://192.168.174.131:8200'
-                   ~ ' token=' ~ vault_token) }}" | sudo -S -u {{ username_hv }} ls /home/{{ username_hv }}
+                   ~ ' url=http://192.168.147.131:8200'
+      ~ ' token=' ~ vault_token) }}" | sudo -S -u {{ username_hv }} ls /home/{{ username_hv }}
